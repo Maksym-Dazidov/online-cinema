@@ -67,5 +67,18 @@ class AuthService:
         except (TypeError, ValueError):
             return None
 
+    def validate_refresh_token(self, token: str) -> int | None:
+        payload = self.decode_token(token)
+        if payload is None:
+            return None
+
+        if payload.get("type") != "refresh":
+            return None
+
+        try:
+            return int(payload.get("sub"))
+        except (TypeError, ValueError):
+            return None
+
 
 auth_service = AuthService()
