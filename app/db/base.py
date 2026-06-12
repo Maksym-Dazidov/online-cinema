@@ -2,3 +2,6 @@ from app.db.session import Base
 
 
 from app.models.user import User
+from app.models.movie import Movie
+from app.models.actor import Actor
+from app.models.genre import Genre
