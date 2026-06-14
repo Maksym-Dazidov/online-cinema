@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.deps import require_admin, require_moderator
 from app.db.session import get_db
 from app.schemas.genre import GenreCreate, GenreRead
 from app.crud.genre import genre_crud
@@ -21,12 +22,12 @@ async def get_genre(genre_id: int, db: AsyncSession = Depends(get_db)):
     return genre
 
 
-@router.post("/", response_model=GenreRead, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=GenreRead, status_code=status.HTTP_201_CREATED, dependencies=[Depends(require_moderator)])
 async def create_genre(data: GenreCreate, db: AsyncSession = Depends(get_db)):
     return await genre_crud.create(db, data)
 
 
-@router.delete("/{genre_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{genre_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(require_admin)])
 async def delete_genre(genre_id: int, db: AsyncSession = Depends(get_db)):
     genre = await genre_crud.get(db, genre_id)
     if not genre:

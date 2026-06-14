@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.deps import require_admin, require_moderator
 from app.db.session import get_db
 from app.schemas.actor import ActorCreate, ActorRead
 from app.crud.actor import actor_crud
@@ -21,12 +22,12 @@ async def get_actor(actor_id: int, db: AsyncSession = Depends(get_db)):
     return actor
 
 
-@router.post("/", response_model=ActorRead, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=ActorRead, status_code=status.HTTP_201_CREATED, dependencies=[Depends(require_moderator)])
 async def create_actor(data: ActorCreate, db: AsyncSession = Depends(get_db)):
     return await actor_crud.create(db, data)
 
 
-@router.delete("/{actor_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{actor_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(require_admin)])
 async def delete_actor(actor_id: int, db: AsyncSession = Depends(get_db)):
     actor = await actor_crud.get(db, actor_id)
     if not actor:
