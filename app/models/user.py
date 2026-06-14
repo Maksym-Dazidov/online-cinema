@@ -1,5 +1,5 @@
-from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy import String
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import String, ForeignKey
 from app.db.session import Base
 
 
@@ -11,3 +11,5 @@ class User(Base):
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
     is_active: Mapped[bool] = mapped_column(default=True)
     is_superuser: Mapped[bool] = mapped_column(default=False)
+    group_id: Mapped[int] = mapped_column(ForeignKey("user_groups.id"), nullable=False)
+    group: Mapped["UserGroup"] = relationship(back_populates="users", lazy="joined")
