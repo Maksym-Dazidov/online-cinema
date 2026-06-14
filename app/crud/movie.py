@@ -1,3 +1,4 @@
+from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -34,6 +35,19 @@ class MovieCRUD:
         return result.scalars().all()
 
     async def create(self, db: AsyncSession, data: MovieCreate) -> Movie:
+        stmt = select(Movie).where(
+            Movie.title == data.title,
+            Movie.year == data.year
+        )
+        result = await db.execute(stmt)
+        existing = result.scalar_one_or_none()
+
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Movie with this title and year already exists"
+            )
+
         movie = Movie(
             title=data.title,
             description=data.description,

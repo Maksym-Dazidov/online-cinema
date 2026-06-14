@@ -1,4 +1,4 @@
-from sqlalchemy import String, Integer, ForeignKey, Table, Column, Boolean
+from sqlalchemy import String, Integer, ForeignKey, Table, Column, Boolean, UniqueConstraint
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 from app.db.session import Base
 
@@ -19,6 +19,10 @@ movie_actors = Table(
 
 class Movie(Base):
     __tablename__ = "movies"
+
+    __table_args__ = (
+        UniqueConstraint("title", "year", name="uq_movie_title_year"),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     title: Mapped[str] = mapped_column(String(255), nullable=False)

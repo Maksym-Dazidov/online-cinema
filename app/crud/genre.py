@@ -1,3 +1,4 @@
+from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.genre import Genre
@@ -16,6 +17,16 @@ class GenreCRUD:
         return result.scalars().all()
 
     async def create(self, db: AsyncSession, data: GenreCreate) -> Genre:
+        stmt = select(Genre).where(Genre.name == data.name)
+        result = await db.execute(stmt)
+        existing = result.scalar_one_or_none()
+
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Genre with this name already exists"
+            )
+
         genre = Genre(name=data.name)
         db.add(genre)
         await db.commit()
