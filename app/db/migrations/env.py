@@ -10,19 +10,13 @@ from app.core.config import settings
 # --- Alembic Config ---
 config = context.config
 
-# Подключаем логирование Alembic
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# Метаинформация моделей (таблиц)
 target_metadata = Base.metadata
 
 # --- OFFLINE MODE ---
 def run_migrations_offline():
-    """
-    Запуск миграций без подключения к базе.
-    Alembic генерирует SQL-файл.
-    """
     url = settings.DATABASE_URL.replace("asyncpg", "psycopg2")
 
     context.configure(
@@ -38,9 +32,6 @@ def run_migrations_offline():
 
 # --- ONLINE MODE ---
 def do_run_migrations(connection: Connection):
-    """
-    Запуск миграций с подключением к базе.
-    """
     context.configure(
         connection=connection,
         target_metadata=target_metadata,
@@ -51,10 +42,6 @@ def do_run_migrations(connection: Connection):
 
 
 async def run_migrations_online():
-    """
-    Асинхронный запуск миграций.
-    Здесь мы используем asyncpg, а НЕ psycopg2.
-    """
     connectable = create_async_engine(
         settings.DATABASE_URL,
         poolclass=pool.NullPool,
