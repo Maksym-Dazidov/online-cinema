@@ -1,4 +1,5 @@
 from pydantic import BaseModel, EmailStr, Field
+from app.schemas.user_group import UserGroupRead
 
 
 class UserBase(BaseModel):
@@ -16,15 +17,12 @@ class UserUpdate(BaseModel):
     is_superuser: bool | None = None
 
 
-class UserRead(UserBase):
+class UserRead(BaseModel):
     id: int
+    email: EmailStr = Field(..., max_length=255)
     is_active: bool
     is_superuser: bool
+    group: UserGroupRead
 
-    model_config = {
-        "from_attributes": True
-    }
-
-
-class UserInDB(UserRead):
-    hashed_password: str
+    class Config:
+        from_attributes = True
