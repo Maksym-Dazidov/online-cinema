@@ -3,6 +3,7 @@ from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db
+from app.models.user import User
 from app.services.auth import auth_service
 from app.crud.user import user_crud
 
@@ -30,3 +31,21 @@ async def get_current_user(
         )
 
     return user
+
+
+async def require_admin(current_user: User = Depends(get_current_user)):
+    if current_user.group.name != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required",
+        )
+    return current_user
+
+
+async def require_moderator(current_user: User = Depends(get_current_user)):
+    if current_user.group.name not in ("admin", "moderator"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Moderator access required",
+        )
+    return current_user
