@@ -5,3 +5,4 @@ from app.models.user import User
 from app.models.movie import Movie
 from app.models.actor import Actor
 from app.models.genre import Genre
+from app.models.user_group import UserGroup

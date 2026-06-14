@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.deps import require_admin, require_moderator
 from app.db.session import get_db
 from app.schemas.movie import MovieCreate, MovieUpdate, MovieRead
 from app.crud.movie import movie_crud
@@ -23,7 +24,7 @@ async def get_movie(movie_id: int, db: AsyncSession = Depends(get_db)):
     return movie
 
 
-@router.post("/", response_model=MovieRead, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=MovieRead, status_code=status.HTTP_201_CREATED, dependencies=[Depends(require_moderator)])
 async def create_movie(data: MovieCreate, db: AsyncSession = Depends(get_db)):
     if data.genre_ids:
         for gid in data.genre_ids:
@@ -38,7 +39,7 @@ async def create_movie(data: MovieCreate, db: AsyncSession = Depends(get_db)):
     return await movie_crud.create(db, data)
 
 
-@router.patch("/{movie_id}", response_model=MovieRead)
+@router.patch("/{movie_id}", response_model=MovieRead, dependencies=[Depends(require_moderator)])
 async def update_movie(movie_id: int, data: MovieUpdate, db: AsyncSession = Depends(get_db)):
     movie = await movie_crud.get(db, movie_id)
     if not movie:
@@ -57,7 +58,7 @@ async def update_movie(movie_id: int, data: MovieUpdate, db: AsyncSession = Depe
     return await movie_crud.update(db, movie, data)
 
 
-@router.delete("/{movie_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{movie_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(require_admin)])
 async def delete_movie(movie_id: int, db: AsyncSession = Depends(get_db)):
     movie = await movie_crud.get(db, movie_id)
     if not movie:

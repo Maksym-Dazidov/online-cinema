@@ -1,9 +1,11 @@
+from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.user import User
 from app.schemas.user import UserCreate, UserUpdate
 from app.core.security import get_password_hash
+from app.crud.user_group import user_group_crud
 
 
 class UserCRUD:
@@ -25,11 +27,17 @@ class UserCRUD:
     async def create(self, db: AsyncSession, obj_in: UserCreate) -> User:
         hashed_password = get_password_hash(obj_in.password)
 
+        group = await user_group_crud.get_by_name(db, "user")
+
+        if not group:
+            raise HTTPException(status_code=404, detail="Group not found")
+
         user = User(
             email=obj_in.email,
             hashed_password=hashed_password,
             is_active=True,
             is_superuser=False,
+            group_id=group.id,
         )
 
         db.add(user)
