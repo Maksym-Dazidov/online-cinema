@@ -11,5 +11,12 @@ class User(Base):
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
     is_active: Mapped[bool] = mapped_column(default=True)
     is_superuser: Mapped[bool] = mapped_column(default=False)
+
     group_id: Mapped[int] = mapped_column(ForeignKey("user_groups.id"), nullable=False)
     group: Mapped["UserGroup"] = relationship(back_populates="users", lazy="joined")
+
+    profile: Mapped["UserProfile | None"] = relationship(
+        back_populates="user",
+        uselist=False,
+        lazy="joined",
+    )

@@ -1,5 +1,6 @@
 from pydantic import BaseModel, EmailStr, Field
 from app.schemas.user_group import UserGroupRead
+from app.schemas.user_profile import UserProfileRead
 
 
 class UserBase(BaseModel):
@@ -23,6 +24,7 @@ class UserRead(BaseModel):
     is_active: bool
     is_superuser: bool
     group: UserGroupRead
+    profile: UserProfileRead | None = None
 
     class Config:
         from_attributes = True
