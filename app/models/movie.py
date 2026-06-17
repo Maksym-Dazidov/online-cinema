@@ -48,3 +48,9 @@ class Movie(Base):
         back_populates="movies",
         lazy="selectin",
     )
+
+    reviews: Mapped[list["Review"]] = relationship(
+        back_populates="movie",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+    )
