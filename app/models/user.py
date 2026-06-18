@@ -20,3 +20,9 @@ class User(Base):
         uselist=False,
         lazy="joined",
     )
+
+    favorites: Mapped[list["Favorite"]] = relationship(
+        back_populates="user",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+    )

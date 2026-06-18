@@ -8,3 +8,4 @@ from app.models.genre import Genre
 from app.models.user_group import UserGroup
 from app.models.user_profile import UserProfile
 from app.models.review import Review
+from app.models.favorite import Favorite
