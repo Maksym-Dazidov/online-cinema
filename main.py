@@ -12,6 +12,7 @@ from app.api.genre import router as genre_router
 from app.api.movie import router as movie_router
 from app.api.admin import router as admin_router
 from app.api.review import router as review_router
+from app.api.favorite import router as favorite_router
 
 
 @asynccontextmanager
@@ -31,6 +32,7 @@ app.include_router(genre_router)
 app.include_router(movie_router)
 app.include_router(admin_router)
 app.include_router(review_router)
+app.include_router(favorite_router)
 
 
 @app.get("/")
