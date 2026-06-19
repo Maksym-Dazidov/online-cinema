@@ -26,3 +26,9 @@ class User(Base):
         cascade="all, delete-orphan",
         lazy="selectin",
     )
+
+    cart: Mapped["Cart | None"] = relationship(
+        back_populates="user",
+        uselist=False,
+        lazy="joined",
+    )
