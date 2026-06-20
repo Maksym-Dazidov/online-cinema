@@ -32,3 +32,9 @@ class User(Base):
         uselist=False,
         lazy="joined",
     )
+
+    orders: Mapped[list["Order"]] = relationship(
+        back_populates="user",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+    )
