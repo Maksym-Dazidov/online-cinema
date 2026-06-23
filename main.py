@@ -15,6 +15,7 @@ from app.api.review import router as review_router
 from app.api.favorite import router as favorite_router
 from app.api.cart import router as cart_router
 from app.api.order import router as order_router
+from app.api.payment import router as payment_router
 
 
 @asynccontextmanager
@@ -37,6 +38,7 @@ app.include_router(review_router)
 app.include_router(favorite_router)
 app.include_router(cart_router)
 app.include_router(order_router)
+app.include_router(payment_router)
 
 
 @app.get("/")
