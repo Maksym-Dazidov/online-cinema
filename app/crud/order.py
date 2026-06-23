@@ -4,6 +4,7 @@ from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.crud.user_movie_access import user_movie_access_crud
 from app.models.order import Order, OrderStatus
 from app.models.order_item import OrderItem
 from app.models.cart import Cart
@@ -46,6 +47,13 @@ class OrderCRUD:
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Cart is empty",
             )
+
+        for item in cart.items:
+            if await user_movie_access_crud.has_access(db, user_id, item.movie_id):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Movie №{item.movie_id} already purchased",
+                )
 
         movie_ids = [item.movie_id for item in cart.items]
         movies_stmt = select(Movie).where(Movie.id.in_(movie_ids))
