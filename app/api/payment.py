@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 import stripe
 
 from app.core.deps import get_current_user
+from app.crud.user_movie_access import user_movie_access_crud
 from app.db.session import get_db
 from app.crud.payment import payment_crud
 from app.crud.order import order_crud
@@ -73,6 +74,17 @@ async def stripe_webhook(
         order_id = int(data["metadata"]["order_id"])
         user_id = int(data["metadata"]["user_id"])
 
-        await payment_crud.mark_success_by_order(db, order_id=order_id, user_id=user_id)
+        await payment_crud.mark_success_by_order(
+            db,
+            order_id=order_id,
+            user_id=user_id,
+        )
+
+        await user_movie_access_crud.grant_for_order(
+            db=db,
+            user_id=user_id,
+            order_id=order_id,
+            payment_id=None,
+        )
 
     return {"status": "ok"}
