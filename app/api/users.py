@@ -2,10 +2,12 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.deps import get_current_user
+from app.crud.user_movie_access import user_movie_access_crud
 from app.crud.user_profile import user_profile_crud
 from app.db.session import get_db
 from app.models.user import User
 from app.schemas.user import UserRead
+from app.schemas.user_movie_access import UserMovieAccessRead
 from app.schemas.user_profile import UserProfileRead, UserProfileUpdate, UserProfileCreate
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -43,3 +45,15 @@ async def update_my_profile(
 
     profile = await user_profile_crud.update_for_user(db, profile, data)
     return profile
+
+
+@router.get("/me/movies", response_model=list[UserMovieAccessRead])
+async def get_my_movies(
+        db: AsyncSession = Depends(get_db),
+        current_user=Depends(get_current_user),
+):
+    items = await user_movie_access_crud.get_user_movies(
+        db=db,
+        user_id=current_user.id,
+    )
+    return items

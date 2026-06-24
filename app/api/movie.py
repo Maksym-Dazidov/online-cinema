@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.deps import require_admin, require_moderator
+from app.core.deps import require_admin, require_moderator, get_current_user
+from app.crud.user_movie_access import user_movie_access_crud
 from app.db.session import get_db
 from app.schemas.movie import MovieCreate, MovieUpdate, MovieRead
 from app.crud.movie import movie_crud
@@ -24,7 +25,8 @@ async def get_movie(movie_id: int, db: AsyncSession = Depends(get_db)):
     return movie
 
 
-@router.post("/", response_model=MovieRead, status_code=status.HTTP_201_CREATED, dependencies=[Depends(require_moderator)])
+@router.post("/", response_model=MovieRead, status_code=status.HTTP_201_CREATED,
+             dependencies=[Depends(require_moderator)])
 async def create_movie(data: MovieCreate, db: AsyncSession = Depends(get_db)):
     if data.genre_ids:
         for gid in data.genre_ids:
@@ -65,3 +67,21 @@ async def delete_movie(movie_id: int, db: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Movie not found")
 
     await movie_crud.delete(db, movie)
+
+
+@router.get("/{movie_id}/access")
+async def check_movie_access(
+        movie_id: int,
+        db: AsyncSession = Depends(get_db),
+        current_user=Depends(get_current_user),
+):
+    movie = await movie_crud.get(db, movie_id)
+    if not movie:
+        raise HTTPException(status_code=404, detail="Movie not found")
+
+    has_access = await user_movie_access_crud.has_access(
+        db=db,
+        user_id=current_user.id,
+        movie_id=movie_id,
+    )
+    return {"access": has_access}
