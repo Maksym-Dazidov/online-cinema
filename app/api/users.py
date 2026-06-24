@@ -2,10 +2,14 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.deps import get_current_user
+from app.crud.order import order_crud
+from app.crud.payment import payment_crud
 from app.crud.user_movie_access import user_movie_access_crud
 from app.crud.user_profile import user_profile_crud
 from app.db.session import get_db
 from app.models.user import User
+from app.schemas.order import OrderRead
+from app.schemas.payment import PaymentRead
 from app.schemas.user import UserRead
 from app.schemas.user_movie_access import UserMovieAccessRead
 from app.schemas.user_profile import UserProfileRead, UserProfileUpdate, UserProfileCreate
@@ -57,3 +61,19 @@ async def get_my_movies(
         user_id=current_user.id,
     )
     return items
+
+
+@router.get("/me/orders", response_model=list[OrderRead])
+async def get_my_orders(
+        db: AsyncSession = Depends(get_db),
+        current_user=Depends(get_current_user),
+):
+    return await order_crud.get_for_user(db, current_user.id)
+
+
+@router.get("/me/payments", response_model=list[PaymentRead])
+async def get_my_payments(
+        db: AsyncSession = Depends(get_db),
+        current_user=Depends(get_current_user),
+):
+    return await payment_crud.get_for_user(db, current_user.id)
