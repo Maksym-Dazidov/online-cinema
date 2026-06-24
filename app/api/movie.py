@@ -85,3 +85,38 @@ async def check_movie_access(
         movie_id=movie_id,
     )
     return {"access": has_access}
+
+
+@router.get("/{movie_id}/stream")
+async def stream_movie(
+        movie_id: int,
+        db: AsyncSession = Depends(get_db),
+        current_user=Depends(get_current_user),
+):
+    movie = await movie_crud.get(db, movie_id)
+    if not movie:
+        raise HTTPException(status_code=404, detail="Movie not found")
+
+    if not movie.is_published:
+        raise HTTPException(status_code=403, detail="Movie is not published")
+
+    if movie.is_free:
+        return {
+            "stream_url": f"https://example.com/stream/free/{movie_id}"
+        }
+
+    has_access = await user_movie_access_crud.has_access(
+        db=db,
+        user_id=current_user.id,
+        movie_id=movie_id,
+    )
+
+    if not has_access:
+        raise HTTPException(
+            status_code=403,
+            detail="You do not have access to this movie",
+        )
+
+    return {
+        "stream_url": f"https://example.com/stream/movie/{movie_id}"
+    }
