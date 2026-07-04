@@ -35,7 +35,7 @@ class UserCRUD:
         user = User(
             email=obj_in.email,
             hashed_password=hashed_password,
-            is_active=True,
+            is_active=False,
             is_superuser=False,
             group_id=group.id,
         )
