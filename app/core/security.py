@@ -1,3 +1,5 @@
+import hashlib
+import hmac
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
@@ -44,3 +46,11 @@ def create_refresh_token(subject: str | Any) -> str:
         algorithm=settings.ALGORITHM,
     )
     return encoded_jwt
+
+
+def hash_token(token: str) -> str:
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+
+def verify_token_hash(token: str, token_hash: str) -> bool:
+    return hmac.compare_digest(hash_token(token), token_hash)

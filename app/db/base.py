@@ -17,3 +17,4 @@ from app.models.payment import Payment
 from app.models.payment_item import PaymentItem
 from app.models.user_movie_access import UserMovieAccess
 from app.models.activation_token import ActivationToken
+from app.models.password_reset_token import PasswordResetToken

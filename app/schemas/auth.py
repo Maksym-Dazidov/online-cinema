@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 
 
 class LoginSchema(BaseModel):
@@ -18,3 +18,7 @@ class RefreshTokenSchema(BaseModel):
 
 class EmailSchema(BaseModel):
     email: EmailStr
+
+
+class PasswordResetConfirmSchema(BaseModel):
+    new_password: str = Field(..., min_length=8)
