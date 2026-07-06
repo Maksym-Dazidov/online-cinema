@@ -3,9 +3,17 @@ from datetime import datetime, UTC
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.security import get_password_hash
 from app.crud.activation_token import activation_token_crud
+from app.crud.password_reset_token import password_reset_token_crud
 from app.schemas.user import UserCreate
-from app.schemas.auth import LoginSchema, TokenSchema, RefreshTokenSchema, EmailSchema
+from app.schemas.auth import (
+    LoginSchema,
+    TokenSchema,
+    RefreshTokenSchema,
+    EmailSchema,
+    PasswordResetConfirmSchema
+)
 from app.services.auth import auth_service
 from app.crud.user import user_crud
 from app.db.session import get_db
@@ -28,9 +36,9 @@ async def register(
 
     user = await user_crud.create(db, user_in)
 
-    token_obj = await activation_token_crud.create_or_replace(db, user.id)
+    token_obj, raw_token = await activation_token_crud.create_or_replace(db, user.id)
 
-    await email_service.send_activation_email(user.email, token_obj.token)
+    await email_service.send_activation_email(user.email, raw_token)
 
     return {"message": "Activation email sent"}
 
@@ -50,9 +58,10 @@ async def activate_account(
     user = token_obj.user
     user.is_active = True
 
-    await activation_token_crud.delete(db, token_obj)
     await db.commit()
     await db.refresh(user)
+
+    await activation_token_crud.delete(db, token_obj)
 
     return {"message": "Account activated"}
 
@@ -62,19 +71,52 @@ async def resend_activation(
         email_obj: EmailSchema,
         db: AsyncSession = Depends(get_db),
 ):
-    email = email_obj.email
-
-    user = await user_crud.get_by_email(db, email)
+    user = await user_crud.get_by_email(db, email_obj.email)
     if not user:
-        raise HTTPException(404, "User not found")
+        return {"message": "If the account exists, an activation link has been sent"}
 
     if user.is_active:
         raise HTTPException(400, "User already active")
 
-    token_obj = await activation_token_crud.create_or_replace(db, user.id)
-    await email_service.send_activation_email(user.email, token_obj.token)
+    token_obj, raw_token = await activation_token_crud.create_or_replace(db, user.id)
+    await email_service.send_activation_email(user.email, raw_token)
 
-    return {"message": "Activation email resent"}
+    return {"message": "If the account exists, an activation link has been sent"}
+
+
+@router.post("/request-password-reset")
+async def request_password_reset(
+        email_obj: EmailSchema,
+        db: AsyncSession = Depends(get_db),
+):
+    user = await user_crud.get_by_email(db, email_obj.email)
+    if not user or not user.is_active:
+        return {"message": "If the account exists, a reset link has been sent"}
+
+    token_obj, raw_token = await password_reset_token_crud.create_or_replace(db, user.id)
+    await email_service.send_password_reset_email(user.email, raw_token)
+    return {"message": "If the account exists, a reset link has been sent"}
+
+
+@router.post("/reset-password")
+async def reset_password(
+        token: str,
+        data: PasswordResetConfirmSchema,
+        db: AsyncSession = Depends(get_db),
+):
+    token_obj = await password_reset_token_crud.get_by_token(db, token)
+    if not token_obj or token_obj.expires_at < datetime.now(UTC):
+        raise HTTPException(status_code=400, detail="Invalid or expired token")
+
+    user = token_obj.user
+    user.hashed_password = get_password_hash(data.new_password)
+
+    await db.commit()
+    await db.refresh(user)
+
+    await password_reset_token_crud.delete(db, token_obj)
+
+    return {"message": "Password updated"}
 
 
 @router.post("/login", response_model=TokenSchema)
