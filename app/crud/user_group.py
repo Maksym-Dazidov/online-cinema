@@ -1,4 +1,5 @@
 from sqlalchemy import select
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.user_group import UserGroup
@@ -27,11 +28,12 @@ class UserGroupCRUD:
         await db.refresh(group)
         return group
 
-    async def create_default_groups(self, db: AsyncSession):
-        for name in ("user", "moderator", "admin"):
-            existing = await self.get_by_name(db, name)
-            if not existing:
-                db.add(UserGroup(name=name))
+    async def create_default_groups(self, db: AsyncSession) -> None:
+        stmt = insert(UserGroup).values(
+            [{"name": name} for name in ("user", "moderator", "admin")]
+        )
+        stmt = stmt.on_conflict_do_nothing(index_elements=[UserGroup.name])
+        await db.execute(stmt)
         await db.commit()
 
 

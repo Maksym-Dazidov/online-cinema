@@ -1,5 +1,6 @@
 from fastapi import HTTPException
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.user import User
@@ -9,6 +10,37 @@ from app.crud.user_group import user_group_crud
 
 
 class UserCRUD:
+    async def create_initial_admin_if_absent(
+            self,
+            db: AsyncSession,
+            email: str,
+            password: str,
+    ) -> None:
+        stmt = select(User.id).where(User.group.has(name="admin")).limit(1)
+        result = await db.execute(stmt)
+
+        if result.scalar_one_or_none() is not None:
+            return
+
+        admin_group = await user_group_crud.get_by_name(db, "admin")
+        if admin_group is None:
+            return
+
+        db.add(
+            User(
+                email=email,
+                hashed_password=get_password_hash(password),
+                is_active=True,
+                is_superuser=True,
+                group_id=admin_group.id,
+            )
+        )
+
+        try:
+            await db.commit()
+        except IntegrityError:
+            await db.rollback()
+
     async def get(self, db: AsyncSession, user_id: int) -> User | None:
         stmt = select(User).where(User.id == user_id)
         result = await db.execute(stmt)
