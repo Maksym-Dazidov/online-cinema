@@ -38,7 +38,7 @@ COPY app ./app
 # ------------------------------ RUNTIME ------------------------------
 FROM python:${PYTHON_VERSION}-slim-bookworm AS runtime
 
-ENV PATH="/opt/venv/bin:${PATH}" \
+ENV PATH="/app/.venv/bin:${PATH}" \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PYTHONFAULTHANDLER=1
@@ -51,7 +51,7 @@ RUN apt-get update \
     && groupadd --gid 10001 app \
     && useradd --uid 10001 --gid app --create-home --home-dir /home/app app
 
-COPY --from=builder --chown=app:app /app/.venv /opt/venv
+COPY --from=builder --chown=app:app /app/.venv /app/.venv
 COPY --chown=app:app alembic.ini ./
 COPY --chown=app:app app ./app
 
