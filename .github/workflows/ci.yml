@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - ci-cd/github-actions
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Poetry
+        run: pipx install poetry==2.2.1
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/pypoetry
+          key: ${{ runner.os }}-poetry-${{ hashFiles('poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-poetry-
+
+      - name: Install dependencies
+        run: poetry install --with dev,test --no-interaction
+
+      - name: Lint
+        run: poetry run ruff check app
+
+      - name: Test
+        run: |
+          if [ -d tests ]; then
+            poetry run pytest
+          fi
+
+  container:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Validate production Compose configuration
+        run: docker compose --env-file .env.prod.example -f compose.prod.yml config --no-interpolate
+
+      - name: Build production image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: runtime
+          push: false
+          tags: online-cinema:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

@@ -1,0 +1,43 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-deployment
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04
+    environment: production
+
+    steps:
+      - name: Configure SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+
+      - name: Deploy release
+        env:
+          DEPLOY_HOST: ${{ secrets.EC2_HOST }}
+          DEPLOY_USER: ${{ secrets.EC2_USER }}
+        run: |
+          ssh -o StrictHostKeyChecking=accept-new "$DEPLOY_USER@$DEPLOY_HOST" "bash -s" <<'EOF'
+          set -euo pipefail
+          cd /home/ubuntu/src/online-cinema
+          git fetch --depth=1 origin main
+          git checkout main
+          git reset --hard origin/main
+          docker compose --env-file .env.prod -f compose.prod.yml build --pull
+          docker compose --env-file .env.prod -f compose.prod.yml up -d --wait --wait-timeout 180 --no-build --remove-orphans
+          EOF
