@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 
-from app.db import base
+from app.db import base # noqa: F401
 from app.db.session import async_session_maker
 from app.core.config import settings
 from app.crud.user import user_crud
